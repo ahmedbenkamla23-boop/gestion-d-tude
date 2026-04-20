@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StatusBar, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, StatusBar, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import app from '../firebaseConfig';
 import { useTheme } from '../ThemeContext';
@@ -25,6 +25,10 @@ export default function RegisterScreen({ navigation }) {
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [nameFocus, setNameFocus] = useState(false);
+  const [emailFocus, setEmailFocus] = useState(false);
+  const [pwFocus, setPwFocus] = useState(false);
+  const [pw2Focus, setPw2Focus] = useState(false);
   const str = getStrength(pw);
 
   const handleRegister = async () => {
@@ -43,66 +47,63 @@ export default function RegisterScreen({ navigation }) {
     } finally { setLoading(false); }
   };
 
-  const inp = { backgroundColor: colors.inputBg, borderWidth: 1, borderColor: colors.inputBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary, marginBottom: 16 };
-  const pwWrap = (err) => ({ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.inputBg, borderWidth: 1, borderColor: err ? '#C0594A' : colors.inputBorder, borderRadius: 12, marginBottom: 8 });
+  const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 28, paddingTop: 48, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 10, borderWidth: 1, borderColor: colors.inputBorder, alignItems: 'center', justifyContent: 'center', marginBottom: 28, backgroundColor: colors.card }} onPress={() => navigation.goBack()}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity style={[styles.backBtn, { borderColor: colors.inputBorder, backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
             <Text style={{ fontSize: 18, color: colors.label }}>←</Text>
           </TouchableOpacity>
 
-          <Text style={{ fontSize: 26, fontWeight: '600', color: colors.textPrimary, marginBottom: 6 }}>Create account</Text>
-          <Text style={{ fontSize: 14, color: colors.textSecond, marginBottom: 32 }}>Start organizing your studies</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Create account</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecond }]}>Start organizing your studies</Text>
 
-          {[['Full name', name, setName, 'Ahmed Ben Kamla', 'words', 'default'],
-            ['Email', email, setEmail, 'you@example.com', 'none', 'email-address']].map(([lbl, val, set, ph, cap, kb]) => (
-            <View key={lbl}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: colors.label, marginBottom: 8 }}>{lbl}</Text>
-              <TextInput style={inp} placeholder={ph} placeholderTextColor={colors.textHint} value={val} onChangeText={set} autoCapitalize={cap} keyboardType={kb} />
-            </View>
-          ))}
+          <Text style={[styles.label, { color: colors.label }]}>Full name</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: nameFocus ? colors.accent : colors.inputBorder, color: colors.textPrimary }]} placeholder="Ahmed Ben Kamla" placeholderTextColor={colors.textHint} value={name} onChangeText={setName} onFocus={() => setNameFocus(true)} onBlur={() => setNameFocus(false)} autoCapitalize="words" />
 
-          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.label, marginBottom: 8 }}>Password</Text>
-          <View style={pwWrap(false)}>
-            <TextInput style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary }} placeholder="Min. 6 characters" placeholderTextColor={colors.textHint} value={pw} onChangeText={setPw} secureTextEntry={!showPw} autoCapitalize="none" />
-            <TouchableOpacity onPress={() => setShowPw(!showPw)} style={{ paddingHorizontal: 14 }}>
-              <Text style={{ fontSize: 13, color: colors.accent, fontWeight: '500' }}>{showPw ? 'Hide' : 'Show'}</Text>
+          <Text style={[styles.label, { color: colors.label }]}>Email</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: emailFocus ? colors.accent : colors.inputBorder, color: colors.textPrimary }]} placeholder="you@example.com" placeholderTextColor={colors.textHint} value={email} onChangeText={setEmail} onFocus={() => setEmailFocus(true)} onBlur={() => setEmailFocus(false)} keyboardType="email-address" />
+
+          <Text style={[styles.label, { color: colors.label }]}>Password</Text>
+          <View style={[styles.passwordWrap, { backgroundColor: colors.inputBg, borderColor: pwFocus ? colors.accent : colors.inputBorder }]}>
+            <TextInput style={[styles.passwordInput, { color: colors.textPrimary }]} placeholder="Min. 6 characters" placeholderTextColor={colors.textHint} value={pw} onChangeText={setPw} onFocus={() => setPwFocus(true)} onBlur={() => setPwFocus(false)} secureTextEntry={!showPw} autoCapitalize="none" />
+            <TouchableOpacity onPress={() => setShowPw(!showPw)} style={styles.toggleBtn}>
+              <Text style={[styles.toggleText, { color: colors.accent }]}>{showPw ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
           {pw.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
-                <View style={{ height: 4, borderRadius: 2, width: str.w, backgroundColor: str.c }} />
+            <View style={styles.strengthContainer}>
+              <View style={[styles.strengthBar, { backgroundColor: colors.border }]}>
+                <View style={[styles.strengthFill, { width: str.w, backgroundColor: str.c }]} />
               </View>
-              <Text style={{ fontSize: 11, fontWeight: '500', color: str.c }}>{str.l}</Text>
+              <Text style={[styles.strengthText, { color: str.c }]}>{str.l}</Text>
             </View>
           )}
 
-          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.label, marginBottom: 8 }}>Confirm password</Text>
-          <View style={pwWrap(pw2.length > 0 && pw2 !== pw)}>
-            <TextInput style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary }} placeholder="Repeat your password" placeholderTextColor={colors.textHint} value={pw2} onChangeText={setPw2} secureTextEntry={!showPw2} autoCapitalize="none" />
-            <TouchableOpacity onPress={() => setShowPw2(!showPw2)} style={{ paddingHorizontal: 14 }}>
-              <Text style={{ fontSize: 13, color: colors.accent, fontWeight: '500' }}>{showPw2 ? 'Hide' : 'Show'}</Text>
+          <Text style={[styles.label, { color: colors.label }]}>Confirm password</Text>
+          <View style={[styles.passwordWrap, { backgroundColor: colors.inputBg, borderColor: pw2Focus && pw2.length > 0 && pw2 !== pw ? '#C0594A' : pw2Focus ? colors.accent : colors.inputBorder }]}>
+            <TextInput style={[styles.passwordInput, { color: colors.textPrimary }]} placeholder="Repeat your password" placeholderTextColor={colors.textHint} value={pw2} onChangeText={setPw2} onFocus={() => setPw2Focus(true)} onBlur={() => setPw2Focus(false)} secureTextEntry={!showPw2} autoCapitalize="none" />
+            <TouchableOpacity onPress={() => setShowPw2(!showPw2)} style={styles.toggleBtn}>
+              <Text style={[styles.toggleText, { color: colors.accent }]}>{showPw2 ? 'Hide' : 'Show'}</Text>
             </TouchableOpacity>
           </View>
-          {pw2.length > 0 && pw2 !== pw && <Text style={{ fontSize: 12, color: '#C0594A', marginBottom: 12, marginTop: -4 }}>Passwords do not match</Text>}
+          {pw2.length > 0 && pw2 !== pw && <Text style={styles.errorText}>Passwords do not match</Text>}
 
-          <Text style={{ fontSize: 12, color: colors.textHint, textAlign: 'center', lineHeight: 18, marginVertical: 14 }}>
-            By signing up you agree to our <Text style={{ color: colors.accent }}>Terms</Text> and <Text style={{ color: colors.accent }}>Privacy Policy</Text>.
+          <Text style={[styles.termsText, { color: colors.textHint }]}>
+            By signing up you agree to our <Text style={{ color: colors.accent, fontWeight: '600' }}>Terms</Text> and <Text style={{ color: colors.accent, fontWeight: '600' }}>Privacy Policy</Text>.
           </Text>
 
-          <TouchableOpacity style={{ backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginBottom: 20, opacity: loading ? 0.7 : 1 }} onPress={handleRegister} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Create account</Text>}
+          <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent, opacity: loading ? 0.7 : 1 }]} onPress={handleRegister} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.createText}>Create account</Text>}
           </TouchableOpacity>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 14, color: colors.textSecond }}>Already have an account? </Text>
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: colors.textSecond }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={{ fontSize: 14, color: colors.accent, fontWeight: '600' }}>Sign in</Text>
+              <Text style={[styles.footerLink, { color: colors.accent }]}>Sign in</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -110,3 +111,132 @@ export default function RegisterScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+const createStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 28,
+    paddingTop: 48,
+    paddingBottom: 40,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 28,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: 0.3,
+  },
+  subtitle: {
+    fontSize: 15,
+    marginBottom: 32,
+    fontWeight: '500',
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+    marginBottom: 18,
+    fontWeight: '500',
+  },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  toggleBtn: {
+    paddingHorizontal: 14,
+  },
+  toggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  strengthContainer: {
+    marginBottom: 14,
+  },
+  strengthBar: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  strengthFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  strengthText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#C0594A',
+    marginBottom: 14,
+    fontWeight: '500',
+  },
+  termsText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginVertical: 16,
+    fontWeight: '500',
+  },
+  createBtn: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  createText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  footerLink: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+});
