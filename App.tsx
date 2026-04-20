@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import app from './firebaseConfig';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -19,17 +19,17 @@ const auth = getAuth(app);
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const IconHome = ({ color }) => (
+const IconHome = ({ color }: { color: string }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
-const IconSubjects = ({ color }) => (
+const IconSubjects = ({ color }: { color: string }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path d="M4 19V8a2 2 0 012-2h12a2 2 0 012 2v11M4 19h16M9 6V4M15 6V4M8 12h8M8 16h5" stroke={color} strokeWidth={2} strokeLinecap="round" />
   </Svg>
 );
-const IconTasks = ({ color }) => (
+const IconTasks = ({ color }: { color: string }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
@@ -54,7 +54,7 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
   const { colors } = useTheme();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [init, setInit] = useState(true);
 
   useEffect(() => {
