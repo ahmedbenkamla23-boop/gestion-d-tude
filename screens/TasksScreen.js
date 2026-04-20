@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, SafeAreaView, StatusBar,
-  TextInput, Modal, Alert, ActivityIndicator, FlatList, ScrollView
+  TextInput, Modal, Alert, ActivityIndicator, FlatList, ScrollView, StyleSheet
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
@@ -42,6 +42,10 @@ export default function TasksScreen() {
   const [taskDate, setTaskDate] = useState('');
   const [selSubject, setSelSubject] = useState(null);
   const [dateError, setDateError] = useState('');
+  const [taskNameFocus, setTaskNameFocus] = useState(false);
+  const [taskDateFocus, setTaskDateFocus] = useState(false);
+
+  const styles = createStyles(C);
 
   useEffect(() => {
     if (!user) return;
@@ -55,9 +59,9 @@ export default function TasksScreen() {
     const q2 = query(collection(db, 'subjects'), where('userId', '==', user.uid));
     const unsub2 = onSnapshot(q2, snap => setSubjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unsub1(); unsub2(); };
-  }, []);
+  }, [user]);
 
-  const openModal = () => { setTaskName(''); setTaskDate(''); setSelSubject(subjects[0] || null); setDateError(''); setModalVisible(true); };
+  const openModal = () => { setTaskName(''); setTaskDate(''); setSelSubject(subjects[0] || null); setDateError(''); setTaskNameFocus(false); setTaskDateFocus(false); setModalVisible(true); };
 
   const validateDate = str => /^\d{4}-\d{2}-\d{2}$/.test(str);
 
@@ -97,32 +101,31 @@ export default function TasksScreen() {
   });
 
   const pending = tasks.filter(t => !t.done).length;
-  const lblStyle = { fontSize: 10, fontWeight: '600', color: C.textSecond, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 };
 
-  if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator color={C.accent} /></SafeAreaView>;
+  if (loading) return <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}><ActivityIndicator color={C.accent} size="large" /></SafeAreaView>;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
 
       {/* Header */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+      <View style={styles.headerContainer}>
+        <View style={styles.headerTop}>
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: C.textPrimary }}>Tasks</Text>
-            <Text style={{ fontSize: 11, color: C.textSecond, marginTop: 1 }}>{pending} pending · {tasks.length} total</Text>
+            <Text style={[styles.title, { color: C.textPrimary }]}>Tasks</Text>
+            <Text style={[styles.count, { color: C.textSecond }]}>{pending} pending · {tasks.length} total</Text>
           </View>
-          <TouchableOpacity onPress={openModal} style={{ width: 32, height: 32, backgroundColor: C.accent, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 22, lineHeight: 26 }}>+</Text>
+          <TouchableOpacity onPress={openModal} style={[styles.addBtn, { backgroundColor: C.accent }]}>
+            <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
 
         {/* Filter tabs */}
-        <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+        <View style={styles.filterRow}>
           {FILTERS.map(f => (
             <TouchableOpacity key={f} onPress={() => setFilter(f)}
-              style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: filter === f ? C.accent : C.card, borderWidth: 1, borderColor: filter === f ? C.accent : C.border }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: filter === f ? '#fff' : C.textSecond }}>{f}</Text>
+              style={[styles.filterBtn, { backgroundColor: filter === f ? C.accent : C.card, borderColor: filter === f ? C.accent : C.border }]}>
+              <Text style={[styles.filterText, { color: filter === f ? '#fff' : C.textSecond }]}>{f}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -130,40 +133,40 @@ export default function TasksScreen() {
 
       {/* Task list */}
       {filtered.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 28 }}>✅</Text>
-          <Text style={{ fontSize: 13, color: C.textHint, fontWeight: '500' }}>{filter === 'Done' ? 'No completed tasks yet.' : 'No tasks here. Tap + to add one.'}</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>✅</Text>
+          <Text style={[styles.emptyText, { color: C.textHint }]}>{filter === 'Done' ? 'No completed tasks yet.' : 'No tasks here. Tap + to add one.'}</Text>
         </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={t => t.id}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, gap: 8 }}
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item: t }) => {
             const dl = t.done ? 'Done' : daysLeft(t.date);
             const bc = badgeColor(dl, C);
             return (
-              <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 13, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={[styles.taskCard, { backgroundColor: C.card, borderColor: C.border }]}>
                 <TouchableOpacity onPress={() => toggleDone(t)}
-                  style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: t.done ? C.sage : C.inputBorder, backgroundColor: t.done ? C.sage : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                  {t.done && <Text style={{ color: '#fff', fontSize: 11 }}>✓</Text>}
+                  style={[styles.checkbox, { borderColor: t.done ? C.sage : C.inputBorder, backgroundColor: t.done ? C.sage : 'transparent' }]}>
+                  {t.done && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: t.done ? C.textHint : C.textPrimary, textDecorationLine: t.done ? 'line-through' : 'none' }}>{t.name}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                    {t.subjectColor && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: t.subjectColor }} />}
-                    {t.subjectName && <Text style={{ fontSize: 10, color: C.textSecond }}>{t.subjectName}</Text>}
-                    {t.date && <Text style={{ fontSize: 10, color: C.textHint }}>· {t.date}</Text>}
+                <View style={styles.taskContent}>
+                  <Text style={[styles.taskName, { color: t.done ? C.textHint : C.textPrimary, textDecorationLine: t.done ? 'line-through' : 'none' }]}>{t.name}</Text>
+                  <View style={styles.taskMeta}>
+                    {t.subjectColor && <View style={[styles.subjectDot, { backgroundColor: t.subjectColor }]} />}
+                    {t.subjectName && <Text style={[styles.subjectName, { color: C.textSecond }]}>{t.subjectName}</Text>}
+                    {t.date && <Text style={[styles.taskDate, { color: C.textHint }]}>· {t.date}</Text>}
                   </View>
                 </View>
                 {dl && (
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 7, backgroundColor: bc.bg }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: bc.txt }}>{dl}</Text>
+                  <View style={[styles.badge, { backgroundColor: bc.bg }]}>
+                    <Text style={[styles.badgeText, { color: bc.txt }]}>{dl}</Text>
                   </View>
                 )}
-                <TouchableOpacity onPress={() => deleteTask(t.id)} style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: isDark ? '#2E1E1A' : '#FDF0EE', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}>
-                  <Text style={{ fontSize: 10, color: '#C0594A' }}>✕</Text>
+                <TouchableOpacity onPress={() => deleteTask(t.id)} style={[styles.deleteBtn, { backgroundColor: isDark ? '#2E1E1A' : '#FDF0EE' }]}>
+                  <Text style={styles.deleteBtnText}>✕</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -173,48 +176,52 @@ export default function TasksScreen() {
 
       {/* Add Task Modal */}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: C.card, borderRadius: 20, padding: 20, width: '100%', gap: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: C.textPrimary }}>Add new task</Text>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: C.card }]}>
+            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Add new task</Text>
 
-            <View>
-              <Text style={lblStyle}>Task name</Text>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: C.textSecond }]}>Task name</Text>
               <TextInput
-                style={{ backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.inputBorder, borderRadius: 10, padding: 10, fontSize: 13, color: C.textPrimary }}
+                style={[styles.input, { backgroundColor: C.inputBg, borderColor: taskNameFocus ? C.accent : C.inputBorder, color: C.textPrimary }]}
                 placeholder="e.g. Chapter 5 exercises"
                 placeholderTextColor={C.textHint}
                 value={taskName}
                 onChangeText={setTaskName}
+                onFocus={() => setTaskNameFocus(true)}
+                onBlur={() => setTaskNameFocus(false)}
               />
             </View>
 
-            <View>
-              <Text style={lblStyle}>Due date</Text>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: C.textSecond }]}>Due date</Text>
               <TextInput
-                style={{ backgroundColor: C.inputBg, borderWidth: 1, borderColor: dateError ? '#C0594A' : C.inputBorder, borderRadius: 10, padding: 10, fontSize: 13, color: C.textPrimary }}
+                style={[styles.input, { backgroundColor: C.inputBg, borderColor: dateError || taskDateFocus ? (dateError ? '#C0594A' : C.accent) : C.inputBorder, color: C.textPrimary }]}
                 placeholder="YYYY-MM-DD (optional)"
                 placeholderTextColor={C.textHint}
                 value={taskDate}
                 onChangeText={t => { setTaskDate(t); setDateError(''); }}
+                onFocus={() => setTaskDateFocus(true)}
+                onBlur={() => setTaskDateFocus(false)}
                 keyboardType="numeric"
               />
-              {dateError ? <Text style={{ fontSize: 10, color: '#C0594A', marginTop: 4 }}>{dateError}</Text> : null}
+              {dateError && <Text style={styles.errorText}>{dateError}</Text>}
             </View>
 
             {subjects.length > 0 && (
-              <View>
-                <Text style={lblStyle}>Subject</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: C.textSecond }]}>Subject</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+                  <View style={styles.subjectList}>
                     <TouchableOpacity onPress={() => setSelSubject(null)}
-                      style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 9, backgroundColor: !selSubject ? C.accentLight : C.inputBg, borderWidth: 1, borderColor: !selSubject ? C.accent : C.border }}>
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: !selSubject ? C.accent : C.textSecond }}>None</Text>
+                      style={[styles.subjectBtn, { backgroundColor: !selSubject ? C.accentLight : C.inputBg, borderColor: !selSubject ? C.accent : C.border }]}>
+                      <Text style={[styles.subjectBtnText, { color: !selSubject ? C.accent : C.textSecond }]}>None</Text>
                     </TouchableOpacity>
                     {subjects.map(s => (
                       <TouchableOpacity key={s.id} onPress={() => setSelSubject(s)}
-                        style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 9, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: selSubject?.id === s.id ? s.color + '22' : C.inputBg, borderWidth: 1, borderColor: selSubject?.id === s.id ? s.color : C.border }}>
+                        style={[styles.subjectBtn, { backgroundColor: selSubject?.id === s.id ? s.color + '22' : C.inputBg, borderColor: selSubject?.id === s.id ? s.color : C.border }]}>
                         <Text style={{ fontSize: 12 }}>{s.icon}</Text>
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: selSubject?.id === s.id ? s.color : C.textSecond }}>{s.name}</Text>
+                        <Text style={[styles.subjectBtnText, { color: selSubject?.id === s.id ? s.color : C.textSecond }]}>{s.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -222,12 +229,12 @@ export default function TasksScreen() {
               </View>
             )}
 
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={{ flex: 1, backgroundColor: C.border, borderRadius: 10, padding: 11, alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: C.label }}>Cancel</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.modalBtn, { backgroundColor: C.border }]}>
+                <Text style={[styles.modalBtnText, { color: C.label }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={saveTask} style={{ flex: 1, backgroundColor: C.accent, borderRadius: 10, padding: 11, alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Add task</Text>
+              <TouchableOpacity onPress={saveTask} style={[styles.modalBtn, { backgroundColor: C.accent }]}>
+                <Text style={[styles.modalBtnText, { color: '#fff' }]}>Add task</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -236,3 +243,244 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
+
+const createStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  count: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 3,
+    letterSpacing: 0.1,
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addBtnText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 28,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 7,
+  },
+  filterBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+    gap: 9,
+    paddingTop: 8,
+  },
+  taskCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskName: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  taskMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  subjectDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  subjectName: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  taskDate: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 7,
+    flexShrink: 0,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  deleteBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  deleteBtnText: {
+    fontSize: 10,
+    color: '#C0594A',
+    fontWeight: '700',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    borderRadius: 18,
+    padding: 20,
+    width: '100%',
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    marginBottom: 4,
+  },
+  formGroup: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  errorText: {
+    fontSize: 10,
+    color: '#C0594A',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  subjectList: {
+    flexDirection: 'row',
+    gap: 7,
+    paddingHorizontal: 4,
+  },
+  subjectBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+  },
+  subjectBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  modalBtn: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 13,
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+});

@@ -3,10 +3,12 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import app from "../firebaseConfig";
+import { useTheme } from './ThemeContext';
 
 const auth = getAuth(app);
 
 export default function RegisterScreen({ navigation }) {
+  const { colors } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,23 +38,25 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
 
-      <Text style={styles.title}>Créer un compte</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>Créer un compte</Text>
 
       <TextInput
         placeholder="Entrer votre email"
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
         value={email}
         onChangeText={setEmail}
+        placeholderTextColor={colors.textHint}
       />
 
       <TextInput
         placeholder="Entrer votre mot de passe"
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
         secureTextEntry={true}
         value={password}
         onChangeText={setPassword}
+        placeholderTextColor={colors.textHint}
       />
 
       <Button title="Créer un compte" onPress={handleRegister} />

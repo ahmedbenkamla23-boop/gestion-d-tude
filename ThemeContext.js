@@ -17,43 +17,43 @@ export const ThemeProvider = ({ children }) => {
 
   // Logo palette applied to app variables
   const lightColors = {
-    bg: '#F5F7FA',
+    bg: '#F4F7FB',
     card: '#FFFFFF',
-    accent: '#5C6BC0', // Logo Indigo
-    accentLight: '#EEF0F8',
-    sage: '#5A8A6A',   // Logo Green
-    sageLight: '#EEF3F0',
-    amber: '#C49A3C',  // Logo Amber
-    amberLight: '#F8F4EC',
-    textPrimary: '#1A1D21',
-    textSecond: '#687076',
-    textHint: '#9BA1A6',
-    border: '#E6E8EB',
+    accent: '#4F7D5B', // Main brand green
+    accentLight: '#E9F1EA',
+    sage: '#304A9E',   // Supporting blue
+    sageLight: '#E6EDF7',
+    amber: '#D79C34',  // Logo amber
+    amberLight: '#FAF1DF',
+    textPrimary: '#1C2330',
+    textSecond: '#5F6B7A',
+    textHint: '#8D98A4',
+    border: '#D9DFE7',
     inputBg: '#FFFFFF',
-    inputBorder: '#D7DBDF',
-    label: '#4B5563',
+    inputBorder: '#D1D8E2',
+    label: '#4C5B6D',
     tabBar: '#FFFFFF',
-    tabBorder: '#E6E8EB',
+    tabBorder: '#D9DFE7',
   };
 
   const darkColors = {
-    bg: '#121212',
-    card: '#1E1E1E',
-    accent: '#7383DB', // Slightly lighter Indigo for dark mode visibility
-    accentLight: '#5C6BC026', 
-    sage: '#679B78',   // Slightly lighter Sage
-    sageLight: '#5A8A6A26',
-    amber: '#D9AB44',  // Slightly lighter Amber
-    amberLight: '#C49A3C26',
-    textPrimary: '#F1F3F5',
-    textSecond: '#AEC0CB',
-    textHint: '#687076',
-    border: '#2C2E33',
-    inputBg: '#181818',
-    inputBorder: '#3A3F45',
-    label: '#9BA1A6',
-    tabBar: '#1E1E1E',
-    tabBorder: '#2C2E33',
+    bg: '#10151F',
+    card: '#172033',
+    accent: '#5F8A6B', // Main brand green for dark mode
+    accentLight: '#4F7D5B26',
+    sage: '#5976CE',   // Supporting blue
+    sageLight: '#3A5CB426',
+    amber: '#E0B24B',  // Brighter amber
+    amberLight: '#D79C3426',
+    textPrimary: '#F4F7FB',
+    textSecond: '#B0BCCF',
+    textHint: '#7A8695',
+    border: '#253146',
+    inputBg: '#1B2333',
+    inputBorder: '#32415A',
+    label: '#9DA9B8',
+    tabBar: '#172033',
+    tabBorder: '#253146',
   };
 
   const colors = isDark ? darkColors : lightColors;

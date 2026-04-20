@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, SafeAreaView, StatusBar,
-  ScrollView, TextInput, Modal, Alert, ActivityIndicator, FlatList
+  ScrollView, TextInput, Modal, Alert, ActivityIndicator, FlatList, StyleSheet
 } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
@@ -28,6 +28,9 @@ export default function SubjectsScreen() {
   const [selIcon, setSelIcon] = useState(0);
   const [selColor, setSelColor] = useState(0);
   const [dupError, setDupError] = useState(false);
+  const [nameFocus, setNameFocus] = useState(false);
+
+  const styles = createStyles(C);
 
   useEffect(() => {
     if (!user) return;
@@ -48,7 +51,7 @@ export default function SubjectsScreen() {
     });
   }, [detailSubject]);
 
-  const openModal = () => { setName(''); setSelIcon(0); setSelColor(0); setDupError(false); setModalVisible(true); };
+  const openModal = () => { setName(''); setSelIcon(0); setSelColor(0); setDupError(false); setNameFocus(false); setModalVisible(true); };
 
   const saveSubject = async () => {
     const trimmed = name.trim();
@@ -65,43 +68,40 @@ export default function SubjectsScreen() {
     { text: 'Delete', style: 'destructive', onPress: () => deleteDoc(doc(db, 'subjects', id)) },
   ]);
 
-  const cardStyle = { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 };
-  const lblStyle = { fontSize: 10, fontWeight: '600', color: C.textSecond, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 };
-
-  if (loading) return <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator color={C.accent} /></SafeAreaView>;
+  if (loading) return <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}><ActivityIndicator color={C.accent} size="large" /></SafeAreaView>;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 30, gap: 8 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <View style={styles.header}>
           <View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: C.textPrimary }}>Subjects</Text>
-            <Text style={{ fontSize: 11, color: C.textSecond, marginTop: 1 }}>{subjects.length} subject{subjects.length !== 1 ? 's' : ''}</Text>
+            <Text style={[styles.title, { color: C.textPrimary }]}>Subjects</Text>
+            <Text style={[styles.count, { color: C.textSecond }]}>{subjects.length} subject{subjects.length !== 1 ? 's' : ''}</Text>
           </View>
-          <TouchableOpacity onPress={openModal} style={{ width: 32, height: 32, backgroundColor: C.accent, borderRadius: 9, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 22, lineHeight: 26 }}>+</Text>
+          <TouchableOpacity onPress={openModal} style={[styles.addBtn, { backgroundColor: C.accent }]}>
+            <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
 
         {subjects.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: 50, gap: 8 }}>
-            <Text style={{ fontSize: 32 }}>📚</Text>
-            <Text style={{ fontSize: 13, color: C.textHint, fontWeight: '500' }}>No subjects yet. Tap + to add one.</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>📚</Text>
+            <Text style={[styles.emptyText, { color: C.textHint }]}>No subjects yet. Tap + to add one.</Text>
           </View>
         ) : subjects.map(s => (
-          <TouchableOpacity key={s.id} style={cardStyle} onPress={() => setDetailSubject(s)} activeOpacity={0.8}>
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: s.color + '22', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 17 }}>{s.icon}</Text>
+          <TouchableOpacity key={s.id} style={[styles.card, { backgroundColor: C.card, borderColor: C.border }]} onPress={() => setDetailSubject(s)} activeOpacity={0.75}>
+            <View style={[styles.cardIcon, { backgroundColor: s.color + '22' }]}>
+              <Text style={styles.cardIconText}>{s.icon}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textPrimary }}>{s.name}</Text>
-              <Text style={{ fontSize: 10, color: C.textSecond, marginTop: 1 }}>Tap to view tasks</Text>
+            <View style={styles.cardContent}>
+              <Text style={[styles.cardName, { color: C.textPrimary }]}>{s.name}</Text>
+              <Text style={[styles.cardMeta, { color: C.textSecond }]}>Tap to view tasks</Text>
             </View>
-            <View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: s.color, marginRight: 4 }} />
-            <TouchableOpacity onPress={() => deleteSubject(s.id)} style={{ width: 26, height: 26, borderRadius: 7, backgroundColor: isDark ? '#2E1E1A' : '#FDF0EE', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 11, color: '#C0594A' }}>✕</Text>
+            <View style={[styles.cardBar, { backgroundColor: s.color }]} />
+            <TouchableOpacity onPress={() => deleteSubject(s.id)} style={[styles.deleteBtn, { backgroundColor: isDark ? '#2E1E1A' : '#FDF0EE' }]}>
+              <Text style={styles.deleteBtnText}>✕</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
@@ -109,75 +109,263 @@ export default function SubjectsScreen() {
 
       {/* Add Subject Modal */}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: C.card, borderRadius: 20, padding: 20, width: '100%', gap: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: C.textPrimary }}>Add new subject</Text>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: C.card }]}>
+            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Add new subject</Text>
 
-            <View>
-              <Text style={lblStyle}>Name</Text>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: C.textSecond }]}>Name</Text>
               <TextInput
-                style={{ backgroundColor: C.inputBg, borderWidth: 1, borderColor: dupError ? '#C0594A' : C.inputBorder, borderRadius: 10, padding: 10, fontSize: 13, color: C.textPrimary }}
+                style={[styles.input, { backgroundColor: C.inputBg, borderColor: dupError ? '#C0594A' : nameFocus ? C.accent : C.inputBorder, color: C.textPrimary }]}
                 placeholder="e.g. Mathematics"
                 placeholderTextColor={C.textHint}
                 value={name}
                 onChangeText={t => { setName(t); setDupError(false); }}
+                onFocus={() => setNameFocus(true)}
+                onBlur={() => setNameFocus(false)}
               />
-              {dupError && <Text style={{ fontSize: 10, color: '#C0594A', marginTop: 4 }}>A subject with this name already exists.</Text>}
+              {dupError && <Text style={styles.errorText}>A subject with this name already exists.</Text>}
             </View>
 
-            <View>
-              <Text style={lblStyle}>Icon</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: C.textSecond }]}>Icon</Text>
+              <View style={styles.iconGrid}>
                 {ICONS.map((ic, i) => (
                   <TouchableOpacity key={i} onPress={() => setSelIcon(i)}
-                    style={{ width: 36, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: i === selIcon ? C.accentLight : C.inputBg, borderWidth: 1.5, borderColor: i === selIcon ? C.accent : 'transparent' }}>
-                    <Text style={{ fontSize: 15 }}>{ic}</Text>
+                    style={[styles.iconBtn, { backgroundColor: i === selIcon ? C.accentLight : C.inputBg, borderColor: i === selIcon ? C.accent : 'transparent' }]}>
+                    <Text style={styles.iconBtnText}>{ic}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            <View>
-              <Text style={lblStyle}>Color</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: C.textSecond }]}>Color</Text>
+              <View style={styles.colorGrid}>
                 {COLORS.map((c, i) => (
                   <TouchableOpacity key={i} onPress={() => setSelColor(i)}
-                    style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: c, borderWidth: 2.5, borderColor: i === selColor ? C.textPrimary : 'transparent' }} />
+                    style={[styles.colorBtn, { backgroundColor: c, borderColor: i === selColor ? C.textPrimary : 'transparent' }]} />
                 ))}
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={{ flex: 1, backgroundColor: C.border, borderRadius: 10, padding: 11, alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: C.label }}>Cancel</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.modalBtn, { backgroundColor: C.border }]}>
+                <Text style={[styles.modalBtnText, { color: C.label }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={saveSubject} style={{ flex: 1, backgroundColor: C.accent, borderRadius: 10, padding: 11, alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Add subject</Text>
+              <TouchableOpacity onPress={saveSubject} style={[styles.modalBtn, { backgroundColor: C.accent }]}>
+                <Text style={[styles.modalBtnText, { color: '#fff' }]}>Add subject</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+    </SafeAreaView>
+  );
+}
 
-      {/* Subject Detail */}
-      <Modal visible={!!detailSubject} transparent={false} animationType="slide" onRequestClose={() => setDetailSubject(null)}>
-        {detailSubject && (
-          <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderBottomWidth: 1, borderBottomColor: C.border }}>
-              <TouchableOpacity onPress={() => setDetailSubject(null)} style={{ width: 30, height: 30, backgroundColor: C.border, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 15, color: C.label }}>←</Text>
-              </TouchableOpacity>
-              <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: detailSubject.color + '22', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 16 }}>{detailSubject.icon}</Text>
-              </View>
-              <View>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: C.textPrimary }}>{detailSubject.name}</Text>
-                <Text style={{ fontSize: 10, color: C.textSecond }}>{subjectTasks.filter(t => !t.done).length} pending · {subjectTasks.length} total</Text>
-              </View>
-            </View>
-
-            {subjectTasks.length === 0 ? (
+const createStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 30,
+    gap: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  count: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 3,
+    letterSpacing: 0.1,
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addBtnText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 28,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardIconText: {
+    fontSize: 19,
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardName: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+  cardMeta: {
+    fontSize: 10,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  cardBar: {
+    width: 4,
+    height: 24,
+    borderRadius: 2,
+    marginRight: 4,
+  },
+  deleteBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteBtnText: {
+    fontSize: 11,
+    color: '#C0594A',
+    fontWeight: '700',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 50,
+    gap: 10,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    borderRadius: 18,
+    padding: 20,
+    width: '100%',
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    marginBottom: 4,
+  },
+  formGroup: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  errorText: {
+    fontSize: 10,
+    color: '#C0594A',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  iconBtn: {
+    width: '22%',
+    aspectRatio: 1,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  iconBtnText: {
+    fontSize: 17,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  colorBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 2.5,
+    borderColor: 'transparent',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  modalBtn: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 13,
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+});
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <Text style={{ fontSize: 28 }}>✅</Text>
                 <Text style={{ fontSize: 12, color: C.textHint, fontWeight: '500' }}>No tasks for this subject yet.</Text>
