@@ -1,4 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "MyApp",
   "displayName": "MyApp"
+=======
+  "name": "exemple1",
+  "displayName": "exemple1"
+>>>>>>> 3a659d56597abe5a93a2f6377009ea619c2cbd95
 }
