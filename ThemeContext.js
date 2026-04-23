@@ -1,66 +1,59 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useState } from 'react';
 
-const ThemeContext = createContext();
+const light = {
+  bg: '#F7F8FA',
+  card: '#FFFFFF',
+  textPrimary: '#1A1A2E',
+  textSecond: '#6B7280',
+  textHint: '#9CA3AF',
+  accent: '#4F7D5B',
+  accentLight: '#EAF2EC',
+  amber: '#D79C34',
+  amberLight: '#FDF6E3',
+  sage: '#5A8A6A',
+  sageLight: '#EAF2EC',
+  border: '#E5E7EB',
+  inputBg: '#F9FAFB',
+  inputBorder: '#D1D5DB',
+  label: '#374151',
+  tabBar: '#FFFFFF',
+  tabBorder: '#E5E7EB',
+};
 
-export const useTheme = () => useContext(ThemeContext);
+const dark = {
+  bg: '#0F1117',
+  card: '#1C1F2A',
+  textPrimary: '#F1F5F9',
+  textSecond: '#94A3B8',
+  textHint: '#64748B',
+  accent: '#5A9068',
+  accentLight: '#1A2E1F',
+  amber: '#E0A83A',
+  amberLight: '#2E2210',
+  sage: '#6AA07A',
+  sageLight: '#1A2E1F',
+  border: '#2D3142',
+  inputBg: '#252836',
+  inputBorder: '#3D4160',
+  label: '#CBD5E1',
+  tabBar: '#1C1F2A',
+  tabBorder: '#2D3142',
+};
+
+const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
-  const systemColorScheme = useColorScheme();
-  const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
-
-  useEffect(() => {
-    setIsDark(systemColorScheme === 'dark');
-  }, [systemColorScheme]);
-
-  const toggleTheme = () => setIsDark(prev => !prev);
-
-  // Logo palette applied to app variables
-  const lightColors = {
-    bg: '#F4F7FB',
-    card: '#FFFFFF',
-    accent: '#4F7D5B', // Main brand green
-    accentLight: '#E9F1EA',
-    sage: '#304A9E',   // Supporting blue
-    sageLight: '#E6EDF7',
-    amber: '#D79C34',  // Logo amber
-    amberLight: '#FAF1DF',
-    textPrimary: '#1C2330',
-    textSecond: '#5F6B7A',
-    textHint: '#8D98A4',
-    border: '#D9DFE7',
-    inputBg: '#FFFFFF',
-    inputBorder: '#D1D8E2',
-    label: '#4C5B6D',
-    tabBar: '#FFFFFF',
-    tabBorder: '#D9DFE7',
-  };
-
-  const darkColors = {
-    bg: '#10151F',
-    card: '#172033',
-    accent: '#5F8A6B', // Main brand green for dark mode
-    accentLight: '#4F7D5B26',
-    sage: '#5976CE',   // Supporting blue
-    sageLight: '#3A5CB426',
-    amber: '#E0B24B',  // Brighter amber
-    amberLight: '#D79C3426',
-    textPrimary: '#F4F7FB',
-    textSecond: '#B0BCCF',
-    textHint: '#7A8695',
-    border: '#253146',
-    inputBg: '#1B2333',
-    inputBorder: '#32415A',
-    label: '#9DA9B8',
-    tabBar: '#172033',
-    tabBorder: '#253146',
-  };
-
-  const colors = isDark ? darkColors : lightColors;
-
+  const [isDark, setIsDark] = useState(false);
+  const toggleTheme = () => setIsDark(v => !v);
   return (
-    <ThemeContext.Provider value={{ colors, isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ colors: isDark ? dark : light, isDark, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
+};
+
+export const useTheme = () => {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used inside ThemeProvider');
+  return ctx;
 };
