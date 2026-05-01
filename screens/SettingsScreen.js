@@ -60,6 +60,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const C = colors;
   const user = auth.currentUser;
+  if (!user) return null; 
 
   const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -79,11 +80,17 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (!user) return;
-    getStreak(user.uid).then(setStreak).finally(() => setLoading(false));
-  }, [user]);
+    getStreak(user.uid)
+      .then(setStreak)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [user.uid]);
 
   const handleSaveName = async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim()) {
+      Alert.alert('Name required', 'Please enter a display name.');
+      return;
+    }
     setNameLoading(true);
     try {
       await updateProfile(user, { displayName: newName.trim() });
@@ -93,8 +100,14 @@ export default function SettingsScreen() {
   };
 
   const handleChangePassword = async () => {
-    if (!currentPw || !newPw) { Alert.alert('Missing fields', 'Fill in both fields.'); return; }
-    if (newPw.length < 6) { Alert.alert('Too short', 'New password must be at least 6 characters.'); return; }
+    if (!currentPw || !newPw) {
+      Alert.alert('Missing fields', 'Fill in both fields.');
+      return;
+    }
+    if (newPw.length < 6) {
+      Alert.alert('Too short', 'New password must be at least 6 characters.');
+      return;
+    }
     setPwLoading(true);
     try {
       const cred = EmailAuthProvider.credential(user.email, currentPw);
@@ -102,11 +115,13 @@ export default function SettingsScreen() {
       await updatePassword(user, newPw);
       setPwModal(false);
       Alert.alert('Done', 'Password updated successfully.');
+      setCurrentPw('');
+      setNewPw('');
     } catch (e) {
       let msg = 'Something went wrong.';
       if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = 'Current password is incorrect.';
       Alert.alert('Error', msg);
-    } finally { setPwLoading(false); setCurrentPw(''); setNewPw(''); }
+    } finally { setPwLoading(false); }
   };
 
   const handleLogout = () => Alert.alert('Sign out', 'Are you sure?', [

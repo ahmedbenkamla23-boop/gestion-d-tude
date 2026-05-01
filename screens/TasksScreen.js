@@ -41,6 +41,7 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [firestoreError, setFirestoreError] = useState(null);
   const [filter, setFilter] = useState('All');
   const [subjectFilter, setSubjectFilter] = useState(null);
   const [search, setSearch] = useState('');
@@ -55,14 +56,35 @@ export default function TasksScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const u1 = onSnapshot(query(collection(db, 'tasks'), where('userId', '==', user.uid)), snap => {
-      const t = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      t.sort((a, b) => a.done - b.done || new Date(a.date) - new Date(b.date));
-      setTasks(t); setLoading(false);
-    });
-    const u2 = onSnapshot(query(collection(db, 'subjects'), where('userId', '==', user.uid)),
-      snap => setSubjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => { u1(); u2(); };
+
+    const qTasks = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+    const unsubTasks = onSnapshot(
+      qTasks,
+      snap => {
+        const t = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        t.sort((a, b) => a.done - b.done || new Date(a.date) - new Date(b.date));
+        setTasks(t);
+        setLoading(false);
+        setFirestoreError(null);
+      },
+      err => {
+        console.log('Tasks listener error:', err);
+        setFirestoreError(err.message);
+        setLoading(false);
+      }
+    );
+
+    const qSub = query(collection(db, 'subjects'), where('userId', '==', user.uid));
+    const unsubSubjects = onSnapshot(
+      qSub,
+      snap => setSubjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err => console.log('Subjects listener error:', err)
+    );
+
+    return () => {
+      unsubTasks();
+      unsubSubjects();
+    };
   }, [user]);
 
   const openAdd = () => {
@@ -96,22 +118,33 @@ export default function TasksScreen() {
           userId: user.uid, ...payload, done: false, createdAt: new Date().toISOString(),
         });
       }
-      setModalVisible(false);
-    } catch (e) { Alert.alert('Error', e.message); }
+      setModalVisible(false);   // success – close
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Could not save task. Check your connection.');
+      setModalVisible(false);   // close anyway so you aren’t stuck
+    }
   };
 
   const toggleDone = async t => {
-    const nowDone = !t.done;
-    await updateDoc(doc(db, 'tasks', t.id), { done: nowDone });
-    if (nowDone) {
-      await recordTaskCompletion(user.uid).catch(() => {});
+    try {
+      const nowDone = !t.done;
+      await updateDoc(doc(db, 'tasks', t.id), { done: nowDone });
+      if (nowDone) {
+        await recordTaskCompletion(user.uid);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not update task.');
     }
   };
 
   const deleteTask = id => Alert.alert('Delete task', 'Delete this task?', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => {
-      await deleteDoc(doc(db, 'tasks', id));
+      try {
+        await deleteDoc(doc(db, 'tasks', id));
+      } catch (e) {
+        Alert.alert('Error', 'Could not delete task.');
+      }
     }},
   ]);
 
@@ -129,6 +162,23 @@ export default function TasksScreen() {
       <ActivityIndicator color={C.accent} size="large" />
     </SafeAreaView>
   );
+
+  if (firestoreError) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <Text style={{ fontSize: 16, color: C.textPrimary, marginBottom: 12 }}>Could not load data</Text>
+        <Text style={{ fontSize: 13, color: C.textSecond, textAlign: 'center', marginBottom: 20 }}>{firestoreError}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setLoading(true);
+            setFirestoreError(null);
+          }}
+          style={{ backgroundColor: C.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Retry</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}>
@@ -289,6 +339,7 @@ export default function TasksScreen() {
         visible={datePickerVisible}
         value={form.date || null}
         colors={C}
+        isDark={isDark}
         onCancel={() => setDatePickerVisible(false)}
         onConfirm={d => { setForm(p => ({ ...p, date: d })); setDatePickerVisible(false); }}
       />
